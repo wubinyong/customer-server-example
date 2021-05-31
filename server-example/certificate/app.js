@@ -24,12 +24,14 @@ const Logger = require('logger');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const awsServerlessExpressMiddleware = require('aws-serverless-express/middleware');
 const app = express();
 const router = express.Router();
 const generateCustomKeysAndCertificate = require('./custom_certificate.js');
+const AWS = require('aws-sdk');
 
 // declare a new express app
-router.use(cors());
+// router.use(cors());
 router.use((req, res, next) => {
     bodyParser.json()(req, res, (err) => {
         if (err) {
@@ -43,7 +45,7 @@ router.use((req, res, next) => {
     });
 });
 router.use(bodyParser.urlencoded({ extended: true }));
-// router.use(awsServerlessExpressMiddleware.eventContext());
+router.use(awsServerlessExpressMiddleware.eventContext());
 
 const _signCertificate = async (body) => {
     const { deviceId, modelNumber } = body;
@@ -92,7 +94,7 @@ const _syncCertificate = async (body) => {
         `Synchronizing from LSR device ${deviceId} (${modelNumber})`
     );
 
-    
+
     const result = {
         success: true
     }
@@ -101,7 +103,6 @@ const _syncCertificate = async (body) => {
 
 const syncCertificate = async (req, res) => {
     const { body, ticket } = req;
-    
 
     try {
         const result = await _syncCertificate(body);
@@ -125,20 +126,31 @@ const _telemetryData = async (body) => {
     //     });
     // }
 
+    const creds = new AWS.EnvironmentCredentials("AWS"); // Lambda provided credentials
+    const dynamoConfig = {
+        credentials: creds,
+        region: process.env.AWS_REGION,
+    };
+    const docClient = new AWS.DynamoDB.DocumentClient(dynamoConfig);
+
     Logger.log(
         Logger.levels.INFO,
         `Telemetry data: ${JSON.stringify(body)})`
     );
 
-    const result = {
-        success: true
-    }
-    return result;
+    await docClient
+        .put({
+            TableName: process.env.TELEMETRY_TBL,
+            Item: body,
+        })
+        .promise();
+
+    return body;
 }
 
 const telemetryData = async (req, res) => {
     const { body, ticket } = req;
-    
+
     try {
         const result = await _telemetryData(body);
         res.json(result);
