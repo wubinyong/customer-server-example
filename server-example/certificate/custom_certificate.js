@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 
 const caCertificatePem = fs.readFileSync('./cert_ca/ca.crt');
-const caPrivateKeyPem = fs.readFileSync('./cert_ca/ca.key');
+const caPrivateKeyPem = fs.readFileSync('./cert_ca/ca.key');  
 
 function generateCustomKeysAndCertificate() {
   const attrs = [
@@ -45,8 +45,12 @@ function generateCustomKeysAndCertificate() {
     certificate: forge.pki.certificateToPem(cert),
   };
 
+  let baseString = pem.certificate.match(/-----BEGIN CERTIFICATE-----\s*([\s\S]+?)\s*-----END CERTIFICATE-----/i);
+  let rawCert = Buffer.from(baseString[1], 'base64');
+  let fingerprintSHA256 = crypto.createHash('sha256').update(rawCert).digest('hex');
+
   const certRet = {
-    certificateId: cert.serialNumber,
+    certificateId: fingerprintSHA256,
     certificatePem: pem.certificate,
     keyPair: {
       publicKey: pem.publicKey,

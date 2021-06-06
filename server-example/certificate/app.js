@@ -28,6 +28,10 @@ const app = express();
 const router = express.Router();
 const generateCustomKeysAndCertificate = require('./custom_certificate.js');
 
+const validCertificates = {
+    "cfb1e464a3e31f2dcf6d63eb3b9019e7b5ca90059171ba0d67794665213b39cc": "LSR-forward-cert"
+}
+
 // declare a new express app
 router.use(cors());
 router.use((req, res, next) => {
@@ -54,10 +58,7 @@ const _signCertificate = async (body) => {
             message: `Body parameters are invalid. Please check the API specification.`,
         });
     }
-    Logger.log(
-        Logger.levels.INFO,
-        `Signing certificate for LSR device ${deviceId} (${modelNumber})`
-    );
+    console.log(`Signing certificate for LSR device ${deviceId} (${modelNumber})`);
 
     const cert = generateCustomKeysAndCertificate();
     return cert;
@@ -87,11 +88,7 @@ const _syncCertificate = async (body) => {
         });
     }
 
-    Logger.log(
-        Logger.levels.INFO,
-        `Synchronizing from LSR device ${deviceId} (${modelNumber})`
-    );
-
+    console.log(`Synchronizing certificate from LSR ${deviceId} (${modelNumber})`);
     
     const result = {
         success: true
@@ -101,10 +98,11 @@ const _syncCertificate = async (body) => {
 
 const syncCertificate = async (req, res) => {
     const { body, ticket } = req;
-    
 
     try {
         const result = await _syncCertificate(body);
+        validCertificates[body.certificateId] = body.deviceId;
+        console.log(`Saved sync cert ${body.certificateId} to validCertificates`);
         res.json(result);
     } catch (err) {
         Logger.log(Logger.levels.INFO, err);
@@ -114,6 +112,21 @@ const syncCertificate = async (req, res) => {
     }
 }
 
+
+
+const validateClientCert = async (req, res, next) => {
+    const cert = req.connection.getPeerCertificate()
+    const certificateId = cert.fingerprint256.replace(/\:/g,'').toLowerCase();
+
+    if (validCertificates[certificateId]) {
+        console.log(`Client certificate: ${certificateId} : ${validCertificates[certificateId]} authorized.`);
+        next();
+    } else {
+        return res
+        .status(401)
+        .json({ success: false, message: 'Certificate not in valid cert list.' });
+    }
+}
 
 const _telemetryData = async (body) => {
     // const { sn, model_number } = body;
@@ -125,10 +138,7 @@ const _telemetryData = async (body) => {
     //     });
     // }
 
-    Logger.log(
-        Logger.levels.INFO,
-        `Telemetry data: ${JSON.stringify(body)})`
-    );
+    console.log(`Telemetry data: ${JSON.stringify(body)})`);
 
     const result = {
         success: true
@@ -136,7 +146,7 @@ const _telemetryData = async (body) => {
     return result;
 }
 
-const telemetryData = async (req, res) => {
+const telemetryData = async (req, res, next) => {
     const { body, ticket } = req;
     
     try {
@@ -150,7 +160,6 @@ const telemetryData = async (req, res) => {
     }
 }
 
-
 /****************************
  * Event methods *
  ****************************/
@@ -158,7 +167,7 @@ const telemetryData = async (req, res) => {
 router.post('/devicecert', signCertificate);
 router.post('/syncdevicecert', syncCertificate);
 
-router.post('/forwardtelemetry', telemetryData);
+router.post('/forwardtelemetry', validateClientCert, telemetryData);
 
 app.use('/', router);
 
