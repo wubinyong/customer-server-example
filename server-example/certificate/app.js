@@ -112,8 +112,6 @@ const syncCertificate = async (req, res) => {
     }
 }
 
-
-
 const validateClientCert = async (req, res, next) => {
     const cert = req.connection.getPeerCertificate()
     const certificateId = cert.fingerprint256.replace(/\:/g,'').toLowerCase();
@@ -125,6 +123,29 @@ const validateClientCert = async (req, res, next) => {
         return res
         .status(401)
         .json({ success: false, message: 'Certificate not in valid cert list.' });
+    }
+}
+
+const validateClientCertAndDeviceId = async (req, res, next) => {
+    const cert = req.connection.getPeerCertificate()
+    const certificateId = cert.fingerprint256.replace(/\:/g,'').toLowerCase();
+
+    if (!validCertificates[certificateId]) {
+        return res
+        .status(401)
+        .json({ success: false, message: 'Certificate not in valid cert list.' });
+    }
+
+    const { deviceId } = req.params;
+    if (validCertificates[certificateId] !== deviceId) {
+        return res
+        .status(401)
+        .json({ success: false, message: 'Certificate and deviceId mismatch.' });
+    }
+
+    if (validCertificates[certificateId]) {
+        console.log(`Client certificate: ${certificateId} : ${validCertificates[certificateId]} authorized.`);
+        next();
     }
 }
 
@@ -168,6 +189,7 @@ router.post('/devicecert', signCertificate);
 router.post('/syncdevicecert', syncCertificate);
 
 router.post('/forwardtelemetry', validateClientCert, telemetryData);
+router.post('/devicetelemetry/:deviceId', validateClientCertAndDeviceId, telemetryData);
 
 app.use('/', router);
 

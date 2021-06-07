@@ -1,6 +1,7 @@
 const request_promise = require('request-promise');
 const fs = require('fs');
 const crypto = require('crypto');
+const colors = require('colors');
 
 const API_BASE = 'https://localhost:3030';
 
@@ -8,15 +9,17 @@ const ca = fs.readFileSync('./certs/ca.crt');
 const cert = fs.readFileSync('./certs/client_cert.crt');
 const key = fs.readFileSync('./certs/client_cert.key');
 
-const deviceId = 'test-device-id';
+const deviceId1 = 'test-device-id-1';
+const deviceId2 = 'test-device-id-2';
 const modelNumber = 'test-model';
 
 async function test() {
+  // Request device cert for test-device-id-1
   let options = {
     uri: API_BASE + '/devicecert',
     method: 'POST',
     body: {
-      deviceId: deviceId,
+      deviceId: deviceId1,
       modelNumber: modelNumber,
     },
     cert: cert,
@@ -28,12 +31,12 @@ async function test() {
 
   let resp = await request_promise(options);
   console.log(resp)
-  console.log(`Certificate signed: ${resp.certificateId}`);
+  console.log(`Certificate signed: ${resp.certificateId} for ${deviceId1}`);
 
-  resp.deviceId = deviceId;
+  resp.deviceId = deviceId1;
   resp.modelNumber = modelNumber;
   
-  const deviceCert = resp;
+  const deviceCert1 = resp;
 
   options = {
     uri: API_BASE + '/syncdevicecert',
@@ -46,7 +49,46 @@ async function test() {
     json: true
   }
 
-  console.log(`Synchronizing certificate  ${options.body.certificateId}`);
+  console.log(`Synchronizing certificate ${options.body.certificateId}`);
+  resp = await request_promise(options);
+  console.log(resp)
+
+  // Request device cert for test-device-id-2
+  options = {
+    uri: API_BASE + '/devicecert',
+    method: 'POST',
+    body: {
+      deviceId: deviceId2,
+      modelNumber: modelNumber,
+    },
+    cert: cert,
+    key: key,
+    // ca: ca,
+    rejectUnauthorized: false,
+    json: true
+  }
+
+  resp = await request_promise(options);
+  console.log(resp)
+  console.log(`Certificate signed: ${resp.certificateId} for ${deviceId2}`);
+
+  resp.deviceId = deviceId2;
+  resp.modelNumber = modelNumber;
+  
+  const deviceCert2 = resp;
+
+  options = {
+    uri: API_BASE + '/syncdevicecert',
+    method: 'POST',
+    body: resp,
+    cert: cert,
+    key: key,
+    // ca: ca,
+    rejectUnauthorized: false,
+    json: true
+  }
+
+  console.log(`Synchronizing certificate ${options.body.certificateId}`);
   resp = await request_promise(options);
   console.log(resp)
 
@@ -55,7 +97,7 @@ async function test() {
     uri: API_BASE + '/forwardtelemetry',
     method: 'POST',
     body: {
-      deviceId: deviceId,
+      deviceId: deviceId1,
       createdAt: Math.floor(Date.now() / 1000),
       data: {
         testKey: 'testValue'
@@ -73,30 +115,74 @@ async function test() {
   let rawCert = Buffer.from(baseString[1], 'base64');
   let shaSum = crypto.createHash('sha256').update(rawCert).digest('hex');
 
-  console.log(`Forwarding telemetry data with client cert  ${shaSum}`);
+  console.log(`Forwarding telemetry data with cloud-to-cloud client cert ${shaSum}`);
   resp = await request_promise(options);
   console.log(resp)
 
-  // Device direct send
+  // Device1 direct send
   options = {
-    uri: API_BASE + '/forwardtelemetry',
+    uri: API_BASE + `/devicetelemetry/${deviceId1}`,
     method: 'POST',
     body: {
-      deviceId: deviceId,
       createdAt: Math.floor(Date.now() / 1000),
       data: {
         testKey: 'testValue'
       }
     },
-    cert: deviceCert.certificatePem,
-    key: deviceCert.keyPair.privateKey,
+    cert: deviceCert1.certificatePem,
+    key: deviceCert1.keyPair.privateKey,
     // ca: ca,
     rejectUnauthorized: false,
     json: true
   }
 
-  console.log(`Forwarding telemetry data with signed device cert ${deviceCert.certificateId}`);
+  console.log(`Device1 sending telemetry data with signed device cert ${deviceCert1.certificateId}`);
   resp = await request_promise(options);
+  console.log(resp)
+
+  // Device2 direct send with device2's certificate
+  options = {
+    uri: API_BASE + `/devicetelemetry/${deviceId2}`,
+    method: 'POST',
+    body: {
+      createdAt: Math.floor(Date.now() / 1000),
+      data: {
+        testKey: 'testValue'
+      }
+    },
+    cert: deviceCert2.certificatePem,
+    key: deviceCert2.keyPair.privateKey,
+    // ca: ca,
+    rejectUnauthorized: false,
+    json: true
+  }
+
+  console.log(`Device2 sending telemetry data with signed device cert ${deviceCert2.certificateId}`);
+  resp = await request_promise(options);
+  console.log(resp)
+
+  // Device2 direct send with device1's certificate
+  options = {
+    uri: API_BASE + `/devicetelemetry/${deviceId2}`,
+    method: 'POST',
+    body: {
+      createdAt: Math.floor(Date.now() / 1000),
+      data: {
+        testKey: 'testValue'
+      }
+    },
+    cert: deviceCert1.certificatePem,
+    key: deviceCert1.keyPair.privateKey,
+    // ca: ca,
+    rejectUnauthorized: false,
+    json: true
+  }
+
+  console.log(`Device2 sending telemetry data with signed device cert ${deviceCert1.certificateId}`);
+
+  resp = await request_promise(options).catch(err => {
+    console.log(err.message.red);
+  });
   console.log(resp)
 }
 
