@@ -79,8 +79,8 @@ const signCertificate = async (req, res) => {
 }
 
 const _syncCertificate = async (body) => {
-    const { deviceId, modelNumber } = body;
-    if (!deviceId || !modelNumber) {
+    const { deviceId, modelNumber, certificateId, certificatePem } = body;
+    if (!deviceId || !modelNumber || !certificateId || !certificatePem) {
         return Promise.reject({
             code: 400,
             error: "Invalid parameter",
