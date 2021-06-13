@@ -9,8 +9,8 @@ const app = express();
 const certificates_handler = require('./certificate/app.js');
 
 const ca = fs.readFileSync('./cert_ca/ca.crt');
-const cert = fs.readFileSync('./cert_server/cert.crt');
-const key = fs.readFileSync('./cert_server/cert.key');
+const cert = fs.readFileSync('./cert_server/servercert.crt');
+const key = fs.readFileSync('./cert_server/servercert.key');
 
 // create a write stream (in append mode)
 var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
@@ -24,7 +24,7 @@ let options = {
     cert: cert,
     ca: [ca],
     requestCert: true,
-    rejectUnauthorized: true
+    rejectUnauthorized: false
 };
 
 const server = https.createServer(options, app);

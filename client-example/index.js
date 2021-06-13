@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const colors = require('colors');
 const Mock = require('mockjs');
 
-const API_BASE = 'https://localhost:3030';
+const API_BASE = 'https://127.0.0.1:3030';
 
 const ca = fs.readFileSync('./certs/ca.crt');
 const cert = fs.readFileSync('./certs/client_cert.crt');
@@ -45,8 +45,8 @@ async function test() {
     },
     cert: cert.toString(),
     key: key.toString(),
-    // ca: ca,
-    rejectUnauthorized: false,
+    ca: ca.toString(),
+    rejectUnauthorized: true,
     json: true,
     headers: {
       'APIKeyName': 'APIKeyValue'

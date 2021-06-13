@@ -29,7 +29,7 @@ const router = express.Router();
 const generateCustomKeysAndCertificate = require('./custom_certificate.js');
 
 const validCertificates = {
-    "cfb1e464a3e31f2dcf6d63eb3b9019e7b5ca90059171ba0d67794665213b39cc": "LSR-forward-cert"
+    "c55c79bc2f9b1bd6b1f8a124c590dcc1b9875a101694ea452e2aebe18f4aa2e6": "LSR-forward-cert",
 }
 
 // declare a new express app
@@ -58,9 +58,13 @@ const _signCertificate = async (body) => {
             message: `Body parameters are invalid. Please check the API specification.`,
         });
     }
+    
     console.log(`Signing certificate for LSR device ${deviceId} (${modelNumber})`);
 
     const cert = generateCustomKeysAndCertificate();
+    
+    validCertificates[cert.certificateId] = deviceId;
+    console.log(`Saved sync cert ${cert.certificateId} to validCertificates`);
     return cert;
 }
 
@@ -87,7 +91,8 @@ const _syncCertificate = async (body) => {
             message: `Body parameters are invalid. Please check the API specification.`,
         });
     }
-
+    validCertificates[certificateId] = deviceId;
+    console.log(`Saved sync cert ${certificateId} to validCertificates`);
     console.log(`Synchronizing certificate from LSR ${deviceId} (${modelNumber})`);
     
     const result = {
@@ -101,8 +106,6 @@ const syncCertificate = async (req, res) => {
 
     try {
         const result = await _syncCertificate(body);
-        validCertificates[body.certificateId] = body.deviceId;
-        console.log(`Saved sync cert ${body.certificateId} to validCertificates`);
         res.json(result);
     } catch (err) {
         Logger.log(Logger.levels.INFO, err);
@@ -128,6 +131,11 @@ const validateClientCert = async (req, res, next) => {
 
 const validateClientCertAndDeviceId = async (req, res, next) => {
     const cert = req.connection.getPeerCertificate()
+    if (!cert || !cert.fingerprint256) {
+        return res
+        .status(401)
+        .json({ success: false, message: 'Certificate is required.' });
+    }
     const certificateId = cert.fingerprint256.replace(/\:/g,'').toLowerCase();
 
     if (!validCertificates[certificateId]) {
