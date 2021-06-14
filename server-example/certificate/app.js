@@ -27,10 +27,9 @@ const cors = require('cors');
 const app = express();
 const router = express.Router();
 const generateCustomKeysAndCertificate = require('./custom_certificate.js');
+const fs = require('fs');
 
-const validCertificates = {
-    "c55c79bc2f9b1bd6b1f8a124c590dcc1b9875a101694ea452e2aebe18f4aa2e6": "LSR-forward-cert",
-}
+let validCertificates = JSON.parse(fs.readFileSync('./validCertificates.json'));
 
 // declare a new express app
 router.use(cors());
@@ -64,7 +63,8 @@ const _signCertificate = async (body) => {
     const cert = generateCustomKeysAndCertificate();
     
     validCertificates[cert.certificateId] = deviceId;
-    console.log(`Saved sync cert ${cert.certificateId} to validCertificates`);
+    fs.writeFileSync('./validCertificates.json', JSON.stringify(validCertificates, null, 2));
+    console.log(`Saved signed cert ${cert.certificateId} to validCertificates`);
     return cert;
 }
 
@@ -93,6 +93,7 @@ const _syncCertificate = async (body) => {
     }
     validCertificates[certificateId] = deviceId;
     console.log(`Saved sync cert ${certificateId} to validCertificates`);
+    fs.writeFileSync('./validCertificates.json', JSON.stringify(validCertificates, null, 2));
     console.log(`Synchronizing certificate from LSR ${deviceId} (${modelNumber})`);
     
     const result = {
