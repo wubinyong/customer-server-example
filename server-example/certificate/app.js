@@ -118,6 +118,11 @@ const syncCertificate = async (req, res) => {
 
 const validateClientCert = async (req, res, next) => {
     const cert = req.connection.getPeerCertificate()
+    if (!cert || !cert.fingerprint256) {
+        return res
+        .status(401)
+        .json({ success: false, message: 'Certificate is required.' });
+    }
     const certificateId = cert.fingerprint256.replace(/\:/g,'').toLowerCase();
 
     if (validCertificates[certificateId]) {

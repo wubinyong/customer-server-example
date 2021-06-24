@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const path = require('path');
 const app = express();
 const certificates_handler = require('./certificate/app.js');
+const crypto = require('crypto');
 
 const ca = fs.readFileSync('./cert_ca/ca.crt');
 const cert = fs.readFileSync('./cert_server/servercert.crt');
@@ -24,7 +25,8 @@ let options = {
     cert: cert,
     ca: [ca],
     requestCert: true,
-    rejectUnauthorized: false
+    rejectUnauthorized: false,
+    secureOptions: crypto.constants.SSL_OP_NO_TLSv1_3
 };
 
 const server = https.createServer(options, app);

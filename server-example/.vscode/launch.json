@@ -8,7 +8,10 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\index.js"
+            "program": "${workspaceFolder}\\index.js",
+            "env": {
+                "LOGGING_LEVEL": "2"
+            }
         }
     ]
 }
