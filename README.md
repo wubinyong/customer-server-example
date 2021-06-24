@@ -1,7 +1,11 @@
 # customer-server-example
 
 # Server
-`export LOGGING_LEVEL=2 && node index.js`
+`cd server-example`
+`# npm install`
+`# node index.js`
 
 # Client
-`node index.js`
+`cd client-example`
+`# npm install`
+`# node index.js`

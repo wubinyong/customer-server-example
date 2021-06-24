@@ -20,6 +20,7 @@ function printOptions(options) {
   delete options_copy.key;
   delete options_copy.rejectUnauthorized;
   delete options_copy.json;
+  delete options_copy.ca;
   console.log(`${JSON.stringify(options_copy, null, 2)}`.gray);
 }
 
@@ -43,13 +44,13 @@ async function test() {
       deviceId: deviceId1,
       modelNumber: modelNumber,
     },
-    cert: cert.toString(),
-    key: key.toString(),
-    ca: ca.toString(),
+    cert: cert,
+    key: key,
+    ca: [ca],
     rejectUnauthorized: true,
     json: true,
     headers: {
-      'APIKeyName': 'APIKeyValue'
+      // 'APIKeyName': 'APIKeyValue'
     }
   }
 
@@ -71,11 +72,11 @@ async function test() {
     body: resp,
     cert: cert.toString(),
     key: key.toString(),
-    // ca: ca,
-    rejectUnauthorized: false,
+    ca: ca,
+    rejectUnauthorized: true,
     json: true,
     headers: {
-      'APIKeyName': 'APIKeyValue'
+      // 'APIKeyName': 'APIKeyValue'
     }
   }
 
@@ -96,11 +97,11 @@ async function test() {
     },
     cert: cert.toString(),
     key: key.toString(),
-    // ca: ca,
-    rejectUnauthorized: false,
+    ca: ca,
+    rejectUnauthorized: true,
     json: true,
     headers: {
-      'APIKeyName': 'APIKeyValue'
+      // 'APIKeyName': 'APIKeyValue'
     }
   }
 
@@ -122,11 +123,11 @@ async function test() {
     body: resp,
     cert: cert.toString(),
     key: key.toString(),
-    // ca: ca,
-    rejectUnauthorized: false,
+    ca: ca,
+    rejectUnauthorized: true,
     json: true,
     headers: {
-      'APIKeyName': 'APIKeyValue'
+      // 'APIKeyName': 'APIKeyValue'
     }
   }
 
@@ -148,11 +149,11 @@ async function test() {
     },
     cert: cert.toString(),
     key: key.toString(),
-    // ca: ca,
-    rejectUnauthorized: false,
+    ca: ca,
+    rejectUnauthorized: true,
     json: true,
     headers: {
-      'APIKeyName': 'APIKeyValue'
+      // 'APIKeyName': 'APIKeyValue'
     }
   }
 
@@ -175,11 +176,11 @@ async function test() {
     body: getMockBusinessData(),
     cert: deviceCert1.certificatePem,
     key: deviceCert1.keyPair.privateKey,
-    // ca: ca,
-    rejectUnauthorized: false,
+    ca: ca,
+    rejectUnauthorized: true,
     json: true,
     headers: {
-      'APIKeyName': 'APIKeyValue'
+      // 'APIKeyName': 'APIKeyValue'
     }
   }
 
@@ -197,11 +198,11 @@ async function test() {
     body: getMockBusinessData(),
     cert: deviceCert2.certificatePem,
     key: deviceCert2.keyPair.privateKey,
-    // ca: ca,
-    rejectUnauthorized: false,
+    ca: ca,
+    rejectUnauthorized: true,
     json: true,
     headers: {
-      'APIKeyName': 'APIKeyValue'
+      // 'APIKeyName': 'APIKeyValue'
     }
   }
 
@@ -216,11 +217,11 @@ async function test() {
     body: getMockBusinessData(),
     cert: deviceCert1.certificatePem,
     key: deviceCert1.keyPair.privateKey,
-    // ca: ca,
-    rejectUnauthorized: false,
+    ca: ca,
+    rejectUnauthorized: true,
     json: true,
     headers: {
-      'APIKeyName': 'APIKeyValue'
+      // 'APIKeyName': 'APIKeyValue'
     }
   }
 

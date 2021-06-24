@@ -60,8 +60,6 @@ function generateCustomKeysAndCertificate() {
     createdAt: Math.floor(Date.now() / 1000)
   }
 
-  console.log(certRet);
-
   return certRet;
 }
 

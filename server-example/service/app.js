@@ -46,7 +46,6 @@ router.use((req, res, next) => {
     });
 });
 router.use(bodyParser.urlencoded({ extended: true }));
-// router.use(awsServerlessExpressMiddleware.eventContext());
 
 const _signCertificate = async (body) => {
     const { deviceId, modelNumber } = body;
@@ -75,7 +74,7 @@ const signCertificate = async (req, res) => {
         const result = await _signCertificate(body)
         res.json(result);
     } catch (err) {
-        Logger.log(Logger.levels.INFO, err);
+        console.log(err);
 
         let status = 400;
         return res.status(status).json(err);
@@ -109,7 +108,7 @@ const syncCertificate = async (req, res) => {
         const result = await _syncCertificate(body);
         res.json(result);
     } catch (err) {
-        Logger.log(Logger.levels.INFO, err);
+        console.log(err)
 
         let status = err.code;
         return res.status(status).json(err);
@@ -164,15 +163,6 @@ const validateClientCertAndDeviceId = async (req, res, next) => {
 }
 
 const _telemetryData = async (body) => {
-    // const { sn, model_number } = body;
-    // if (!sn || !model_number) {
-    //     return Promise.reject({
-    //         code: 400,
-    //         error: "Invalid parameter",
-    //         message: `Body parameters are invalid. Please check the API specification.`,
-    //     });
-    // }
-
     console.log(`Telemetry data: ${JSON.stringify(body)})`);
 
     const result = {
@@ -188,7 +178,7 @@ const telemetryData = async (req, res, next) => {
         const result = await _telemetryData(body);
         res.json(result);
     } catch (err) {
-        Logger.log(Logger.levels.INFO, err);
+        console.log(err)
 
         let status = err.code;
         return res.status(status).json(err);
