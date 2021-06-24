@@ -1,11 +1,11 @@
 # customer-server-example
 
 # Server
-`cd server-example`  
+`# cd server-example`  
 `# npm install`  
 `# node index.js`  
 
 # Client
-`cd client-example`  
+`# cd client-example`  
 `# npm install`  
 `# node index.js`  
