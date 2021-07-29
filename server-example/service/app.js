@@ -185,6 +185,29 @@ const telemetryData = async (req, res, next) => {
     }
 }
 
+const _statusData = async (body) => {
+    console.log(`Status data: ${JSON.stringify(body)})`);
+
+    const result = {
+        success: true
+    }
+    return result;
+}
+
+
+const statusData = async (req, res, next) => {
+    const { body, ticket } = req;
+    
+    try {
+        const result = await _statusData(body);
+        res.json(result);
+    } catch (err) {
+        console.log(err)
+        let status = err.code;
+        return res.status(status).json(err);
+    }
+}
+
 /****************************
  * Event methods *
  ****************************/
@@ -193,6 +216,7 @@ router.post('/devicecert', signCertificate);
 router.post('/syncdevicecert', syncCertificate);
 
 router.post('/forwardtelemetry', validateClientCert, telemetryData);
+router.post('/forwardstatus', validateClientCert, statusData);
 router.post('/devicetelemetry/:deviceId', validateClientCertAndDeviceId, telemetryData);
 
 app.use('/', router);
