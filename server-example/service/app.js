@@ -29,6 +29,12 @@ const router = express.Router();
 const generateCustomKeysAndCertificate = require('./custom_certificate.js');
 const fs = require('fs');
 
+const API_KEY_NAME = process.env.API_KEY_NAME;
+const API_KEY_VALUE = process.env.API_KEY_VALUE;
+
+console.log('API_KEY_NAME', API_KEY_NAME);
+console.log('API_KEY_VALUE', API_KEY_VALUE);
+
 let validCertificates = JSON.parse(fs.readFileSync('./validCertificates.json'));
 
 // declare a new express app
@@ -59,7 +65,7 @@ const _signCertificate = async (body) => {
     
     console.log(`Signing certificate for LSR device ${deviceId} (${modelNumber})`);
 
-    const cert = generateCustomKeysAndCertificate();
+    const cert = generateCustomKeysAndCertificate(deviceId);
     
     validCertificates[cert.certificateId] = deviceId;
     fs.writeFileSync('./validCertificates.json', JSON.stringify(validCertificates, null, 2));
@@ -68,7 +74,7 @@ const _signCertificate = async (body) => {
 }
 
 const signCertificate = async (req, res) => {
-    const { body, ticket } = req;
+    const { body } = req;
 
     try {
         const result = await _signCertificate(body)
@@ -102,7 +108,7 @@ const _syncCertificate = async (body) => {
 }
 
 const syncCertificate = async (req, res) => {
-    const { body, ticket } = req;
+    const { body } = req;
 
     try {
         const result = await _syncCertificate(body);
@@ -115,22 +121,20 @@ const syncCertificate = async (req, res) => {
     }
 }
 
-const validateClientCert = async (req, res, next) => {
-    const cert = req.connection.getPeerCertificate()
-    if (!cert || !cert.fingerprint256) {
-        return res
-        .status(401)
-        .json({ success: false, message: 'Certificate is required.' });
-    }
-    const certificateId = cert.fingerprint256.replace(/\:/g,'').toLowerCase();
-
-    if (validCertificates[certificateId]) {
-        console.log(`Client certificate: ${certificateId} : ${validCertificates[certificateId]} authorized.`);
+const validateApiKey = async (req, res, next) => {
+    try {
+        if (!req.headers[API_KEY_NAME] || req.headers[API_KEY_NAME] !== API_KEY_VALUE) {
+            return res.status(401).json({
+                code: 401,
+                error: 'Unauthorized',
+                message: 'Invalid API key',
+            });
+        }
         next();
-    } else {
+    } catch (err) {
         return res
-        .status(401)
-        .json({ success: false, message: 'Certificate not in valid cert list.' });
+            .status(401)
+            .json({ error: 'AccessDeniedException', message: err.message });
     }
 }
 
@@ -172,7 +176,7 @@ const _telemetryData = async (body) => {
 }
 
 const telemetryData = async (req, res, next) => {
-    const { body, ticket } = req;
+    const { body } = req;
     
     try {
         const result = await _telemetryData(body);
@@ -196,7 +200,7 @@ const _statusData = async (body) => {
 
 
 const statusData = async (req, res, next) => {
-    const { body, ticket } = req;
+    const { body } = req;
     
     try {
         const result = await _statusData(body);
@@ -215,8 +219,8 @@ const statusData = async (req, res, next) => {
 router.post('/devicecert', signCertificate);
 router.post('/syncdevicecert', syncCertificate);
 
-router.post('/forwardtelemetry', validateClientCert, telemetryData);
-router.post('/forwardstatus', validateClientCert, statusData);
+router.post('/forwardtelemetry', validateApiKey, telemetryData);
+router.post('/forwardstatus', validateApiKey, statusData);
 router.post('/devicetelemetry/:deviceId', validateClientCertAndDeviceId, telemetryData);
 
 app.use('/', router);

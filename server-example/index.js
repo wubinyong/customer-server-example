@@ -23,7 +23,7 @@ app.use('/', service_handler);
 let options = {
     key: key,
     cert: cert,
-    requestCert: true,
+    requestCert: false,
     rejectUnauthorized: false,  // Set to false because device certificate may be issued by AWS IoT core.
     secureOptions: crypto.constants.SSL_OP_NO_TLSv1_3
 };

@@ -6,11 +6,11 @@ const fs = require('fs');
 const caCertificatePem = fs.readFileSync('./cert_ca/ca.crt');
 const caPrivateKeyPem = fs.readFileSync('./cert_ca/ca.key');  
 
-function generateCustomKeysAndCertificate() {
+function generateCustomKeysAndCertificate(deviceId) {
   const attrs = [
     {
       name: 'commonName',
-      value: 'LSR Device',
+      value: 'LSR-Device-' + deviceId,
     },
     {
       name: 'organizationName',
