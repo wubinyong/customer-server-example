@@ -69,7 +69,7 @@ const _signCertificate = async (body) => {
     
     validCertificates[cert.certificateId] = deviceId;
     fs.writeFileSync('./validCertificates.json', JSON.stringify(validCertificates, null, 2));
-    console.log(`Saved signed cert ${cert.certificateId} to validCertificates`);
+    console.log(`Saved signed cert ${cert.certificateId}: ${deviceId} to validCertificates`);
     return cert;
 }
 
@@ -97,7 +97,7 @@ const _syncCertificate = async (body) => {
         });
     }
     validCertificates[certificateId] = deviceId;
-    console.log(`Saved sync cert ${certificateId} to validCertificates`);
+    console.log(`Saved sync cert ${certificateId}: ${deviceId} to validCertificates`);
     fs.writeFileSync('./validCertificates.json', JSON.stringify(validCertificates, null, 2));
     console.log(`Synchronizing certificate from LSR ${deviceId} (${modelNumber})`);
     
