@@ -47,93 +47,6 @@ router.use((req, res, next) => {
 });
 router.use(bodyParser.urlencoded({ extended: true }));
 
-const _signCertificate = async (body) => {
-    const { deviceId, modelNumber } = body;
-    if (!deviceId || !modelNumber) {
-        return Promise.reject({
-            code: 400,
-            error: "Invalid parameter",
-            message: `Body parameters are invalid. Please check the API specification.`,
-        });
-    }
-    
-    console.log(`Signing certificate for LSR device ${deviceId} (${modelNumber})`);
-
-    const cert = generateCustomKeysAndCertificate();
-    
-    validCertificates[cert.certificateId] = deviceId;
-    fs.writeFileSync('./validCertificates.json', JSON.stringify(validCertificates, null, 2));
-    console.log(`Saved signed cert ${cert.certificateId} to validCertificates`);
-    return cert;
-}
-
-const signCertificate = async (req, res) => {
-    const { body, ticket } = req;
-
-    try {
-        const result = await _signCertificate(body)
-        res.json(result);
-    } catch (err) {
-        console.log(err);
-
-        let status = 400;
-        return res.status(status).json(err);
-    }
-}
-
-const _syncCertificate = async (body) => {
-    const { deviceId, modelNumber, certificateId, certificatePem } = body;
-    if (!deviceId || !modelNumber || !certificateId || !certificatePem) {
-        return Promise.reject({
-            code: 400,
-            error: "Invalid parameter",
-            message: `Body parameters are invalid. Please check the API specification.`,
-        });
-    }
-    validCertificates[certificateId] = deviceId;
-    console.log(`Saved sync cert ${certificateId} to validCertificates`);
-    fs.writeFileSync('./validCertificates.json', JSON.stringify(validCertificates, null, 2));
-    console.log(`Synchronizing certificate from LSR ${deviceId} (${modelNumber})`);
-    
-    const result = {
-        success: true
-    }
-    return result;
-}
-
-const syncCertificate = async (req, res) => {
-    const { body, ticket } = req;
-
-    try {
-        const result = await _syncCertificate(body);
-        res.json(result);
-    } catch (err) {
-        console.log(err)
-
-        let status = err.code;
-        return res.status(status).json(err);
-    }
-}
-
-const validateClientCert = async (req, res, next) => {
-    const cert = req.connection.getPeerCertificate()
-    if (!cert || !cert.fingerprint256) {
-        return res
-        .status(401)
-        .json({ success: false, message: 'Certificate is required.' });
-    }
-    const certificateId = cert.fingerprint256.replace(/\:/g,'').toLowerCase();
-
-    if (validCertificates[certificateId]) {
-        console.log(`Client certificate: ${certificateId} : ${validCertificates[certificateId]} authorized.`);
-        next();
-    } else {
-        return res
-        .status(401)
-        .json({ success: false, message: 'Certificate not in valid cert list.' });
-    }
-}
-
 const validateClientCertAndDeviceId = async (req, res, next) => {
     const cert = req.connection.getPeerCertificate()
     if (!cert || !cert.fingerprint256) {
@@ -185,38 +98,10 @@ const telemetryData = async (req, res, next) => {
     }
 }
 
-const _statusData = async (body) => {
-    console.log(`Status data: ${JSON.stringify(body)})`);
-
-    const result = {
-        success: true
-    }
-    return result;
-}
-
-
-const statusData = async (req, res, next) => {
-    const { body, ticket } = req;
-    
-    try {
-        const result = await _statusData(body);
-        res.json(result);
-    } catch (err) {
-        console.log(err)
-        let status = err.code;
-        return res.status(status).json(err);
-    }
-}
-
 /****************************
  * Event methods *
  ****************************/
 
-router.post('/devicecert', signCertificate);
-router.post('/syncdevicecert', syncCertificate);
-
-router.post('/forwardtelemetry', validateClientCert, telemetryData);
-router.post('/forwardstatus', validateClientCert, statusData);
 router.post('/devicetelemetry/:deviceId', validateClientCertAndDeviceId, telemetryData);
 
 app.use('/', router);
